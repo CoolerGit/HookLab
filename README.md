@@ -2,6 +2,7 @@
 
 **See what makes a short-form hook work, right inside Claude Code.**
 
+[![CI](https://github.com/CoolerGit/HookLab/actions/workflows/ci.yml/badge.svg)](https://github.com/CoolerGit/HookLab/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Built for Claude Code](https://img.shields.io/badge/built%20for-Claude%20Code-8A63D2.svg)
