@@ -9,7 +9,7 @@
 
 ![HookLab dashboard](docs/dashboard.png)
 
-A suite of [Claude Code](https://claude.ai/code) skills for analysing short-form video hooks. Point it at a TikTok, Instagram Reel, or YouTube Short (or an image or a piece of copy) and Claude scores the hook against a binary checklist, classifies the target demographic and niche, extracts the retention tactics, and saves reusable creative assets into a searchable library with a dashboard.
+A suite of [Claude Code](https://claude.ai/code) skills for analysing short-form videos. Point it at a TikTok, Instagram Reel, or YouTube Short (or an image or a piece of copy) and Claude scores the hook against a binary checklist, classifies the target demographic and niche, extracts the retention tactics, and saves reusable creative assets into a searchable library with a dashboard.
 
 HookLab runs **inside Claude Code**. The analysis is done by Claude directly, chat-natively, so there is no separate AI API to sign up for or pay for. The small Python scripts in this repo are helpers the skills call to fetch content and store results; they are not meant to be run as a standalone product.
 
