@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "apify": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@apify/actors-mcp-server",
+        "--actors",
+        "clockworks/tiktok-scraper,apify/instagram-scraper,memo23/tiktok-transcript-extractor-cheerio,apify/rag-web-browser"
+      ],
+      "env": {
+        "APIFY_TOKEN": "APIFY_TOKEN"
+      }
+    }
+  }
+}

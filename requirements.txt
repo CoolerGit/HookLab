@@ -1,0 +1,4 @@
+apify-client
+flask
+Pillow
+requests

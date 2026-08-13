@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOOKLAB</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    @font-face {
+      font-family: 'Pally';
+      src: url('/fonts/Pally-Bold.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --bg:          #0a0a12;
+      --sidebar-bg:  #06060f;
+      --card-bg:     rgba(255,255,255,0.04);
+      --card-border: rgba(255,255,255,0.08);
+      --radius:      20px;
+      --accent:      #4F6EF7;
+      --accent-2:    #7C5CFF;
+      --text:        #ffffff;
+      --muted:       rgba(255,255,255,0.45);
+      --dim:         #ffffff;
+      --sidebar-w:   240px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%; overflow: hidden; overflow-x: hidden; max-width: 100vw;
+      font-family: 'Figtree', sans-serif;
+      background: var(--bg); color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    img, canvas { max-width: 100%; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.94); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+
+    .dot-grid {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.14) 1px, transparent 1px);
+      background-size: 26px 26px;
+    }
+
+    .glow {
+      position: fixed; pointer-events: none; z-index: 0;
+      border-radius: 50%; filter: blur(80px);
+    }
+    .glow-1 {
+      width: 520px; height: 520px; top: -130px; right: -90px;
+      background: radial-gradient(circle, rgba(79,110,247,0.11) 0%, transparent 70%);
+    }
+    .glow-2 {
+      width: 420px; height: 420px; bottom: -90px; left: 32%;
+      background: radial-gradient(circle, rgba(124,92,255,0.08) 0%, transparent 70%);
+    }
+
+    .layout { display: flex; height: 100vh; position: relative; z-index: 1; }
+
+    .sidebar {
+      width: var(--sidebar-w); flex-shrink: 0;
+      background: var(--sidebar-bg);
+      border-right: 1px solid rgba(255,255,255,0.05);
+      display: flex; flex-direction: column;
+      padding: 28px 14px 20px;
+      overflow-y: auto; scrollbar-width: none;
+    }
+    .sidebar::-webkit-scrollbar { display: none; }
+
+    .logo-wrap { margin-bottom: 32px; padding: 0 4px; }
+    .logo-name  { font-family: 'Pally', 'Figtree', sans-serif; font-size: 27px; font-weight: 700; letter-spacing: 0.4px; color: #fff; margin-bottom: 4px; }
+    .logo-sub   { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--dim); }
+
+    .nav-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: var(--dim);
+      padding: 0 6px; margin-bottom: 8px;
+    }
+    .nav-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; margin-top: 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 11px;
+      padding: 11px 12px; border-radius: 12px;
+      cursor: pointer; user-select: none;
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.1px;
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.82); }
+    .nav-item:hover svg { stroke: rgba(255,255,255,0.65); }
+    .nav-item.active { background: rgba(79,110,247,0.15); color: #fff; }
+    .nav-item.active svg { stroke: var(--accent); }
+    .nav-item svg { flex-shrink: 0; stroke: rgba(255,255,255,0.30); transition: stroke 0.14s ease, transform 0.14s ease; }
+    .nav-item:hover svg { transform: scale(1.08); }
+
+    .sidebar-divider { height: 1px; background: rgba(255,255,255,0.05); margin: 0 0 20px; }
+
+    .quick-stats { flex: 1; }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+    .stat-lbl  { font-size: 13px; font-weight: 500; color: var(--muted); }
+    .stat-val  { font-size: 15px; font-weight: 800; color: #fff; }
+    .stat-val.green { color: #10b981; }
+
+    .sidebar-hint { padding: 16px 6px 0; font-size: 11px; color: var(--dim); line-height: 1.75; }
+    .sidebar-hint code {
+      background: rgba(255,255,255,0.06); padding: 2px 7px;
+      border-radius: 5px; font-size: 10px; color: var(--muted); font-family: monospace;
+    }
+
+    .main {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      padding: 36px 44px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(79,110,247,0.18) transparent;
+    }
+    .main::-webkit-scrollbar { width: 4px; }
+    .main::-webkit-scrollbar-track { background: transparent; }
+    .main::-webkit-scrollbar-thumb { background: rgba(79,110,247,0.22); border-radius: 4px; }
+
+    .page-header { margin-bottom: 28px; }
+    .page-eyebrow {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 12px;
+    }
+    .page-eyebrow::before {
+      content: ''; display: inline-block; width: 5px; height: 5px;
+      background: var(--accent); border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+    }
+    .page-title    { font-family: 'Pally', 'Figtree', sans-serif; font-size: 56px; font-weight: 700; letter-spacing: 0.5px; line-height: 1.15; color: #fff; margin-bottom: 10px; }
+
+    .section { display: none; }
+    .section.active { display: block; animation: fadeInUp 0.32s ease both; }
+
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 16px; margin-bottom: 32px;
+    }
+    .metric-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 22px 22px 18px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.30);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      cursor: default;
+      animation: fadeInUp 0.4s ease both;
+    }
+    .metric-card:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0,0,0,0.50); }
+    .metric-card:nth-child(1) { background: linear-gradient(135deg,rgba(79,110,247,0.15) 0%,rgba(10,10,18,0.80) 65%); border-color: rgba(79,110,247,0.22); animation-delay: 0.02s; }
+    .metric-card:nth-child(1):hover { border-color: rgba(79,110,247,0.40); }
+    .metric-card:nth-child(2) { background: linear-gradient(135deg,rgba(16,185,129,0.15) 0%,rgba(10,10,18,0.80) 65%); border-color: rgba(16,185,129,0.22); animation-delay: 0.07s; }
+    .metric-card:nth-child(2):hover { border-color: rgba(16,185,129,0.40); }
+    .metric-card:nth-child(3) { background: linear-gradient(135deg,rgba(124,92,255,0.15) 0%,rgba(10,10,18,0.80) 65%); border-color: rgba(124,92,255,0.22); animation-delay: 0.12s; }
+    .metric-card:nth-child(3):hover { border-color: rgba(124,92,255,0.40); }
+    .metric-card:nth-child(4) { background: linear-gradient(135deg,rgba(245,158,11,0.15) 0%,rgba(10,10,18,0.80) 65%); border-color: rgba(245,158,11,0.22); animation-delay: 0.17s; }
+    .metric-card:nth-child(4):hover { border-color: rgba(245,158,11,0.40); }
+    .metric-lbl { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
+    .metric-val { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; color: #fff; }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+    .chart-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px 20px 18px;
+      backdrop-filter: blur(10px);
+      animation: fadeInUp 0.4s ease both;
+    }
+    .chart-card:nth-child(1) { animation-delay: 0.10s; }
+    .chart-card:nth-child(2) { animation-delay: 0.18s; }
+    .chart-lbl { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); margin-bottom: 18px; }
+    .chart-wrap { position: relative; height: 200px; }
+
+    .section-eyebrow {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    .section-eyebrow::before {
+      content: ''; display: inline-block; width: 5px; height: 5px;
+      border-radius: 50%;
+    }
+    .section-title { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; color: #fff; margin-bottom: 12px; }
+
+    .filters-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .filter-group { display: flex; align-items: center; gap: 8px; }
+    .filter-label {
+      font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.45);
+      white-space: nowrap;
+    }
+    .filter-select {
+      appearance: none; -webkit-appearance: none;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px; color: rgba(255,255,255,0.85);
+      font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 500;
+      padding: 8px 14px; cursor: pointer; outline: none; min-width: 130px;
+      transition: border-color 0.14s ease;
+    }
+    .filter-select option { background: #12141f; }
+    .filter-select:hover  { border-color: rgba(255,255,255,0.30); }
+    .filter-select:focus  { border-color: rgba(79,110,247,0.50); }
+
+    .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 320px; }
+    .search-input {
+      width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px; color: #fff; font-family: 'Figtree', sans-serif; font-size: 13px;
+      padding: 8px 14px 8px 34px; outline: none; transition: border-color 0.14s ease;
+    }
+    .search-input:focus { border-color: rgba(79,110,247,0.50); }
+    .search-input::placeholder { color: rgba(255,255,255,0.40); }
+    .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; stroke: rgba(255,255,255,0.55); pointer-events: none; }
+
+    .view-toggle { display: flex; gap: 8px; margin-left: auto; }
+    .view-btn {
+      padding: 8px 16px; border-radius: 10px; background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.20); color: rgba(255,255,255,0.75);
+      font-family: 'Figtree', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+    }
+    .view-btn:hover  { border-color: rgba(255,255,255,0.35); color: #fff; }
+    .view-btn.active { background: rgba(79,110,247,0.18); border-color: rgba(79,110,247,0.40); color: #fff; }
+
+    .lib-view { display: none; }
+    .lib-view.active { display: block; }
+
+    .pin-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px; margin-bottom: 40px;
+    }
+    .pin-card {
+      position: relative; cursor: pointer;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.30);
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+      animation: fadeInUp 0.35s ease both;
+    }
+    .pin-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.50); border-color: rgba(255,255,255,0.16); }
+    .pin-card:nth-child(1) { animation-delay: 0.02s; }
+    .pin-card:nth-child(2) { animation-delay: 0.05s; }
+    .pin-card:nth-child(3) { animation-delay: 0.08s; }
+    .pin-card:nth-child(4) { animation-delay: 0.11s; }
+    .pin-card:nth-child(5) { animation-delay: 0.14s; }
+    .pin-card:nth-child(6) { animation-delay: 0.17s; }
+    .pin-card:nth-child(7) { animation-delay: 0.20s; }
+    .pin-card:nth-child(8) { animation-delay: 0.23s; }
+    .pin-delete {
+      position: absolute; top: 8px; right: 8px; z-index: 2;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.38);
+      color: rgba(255,255,255,0.88); font-size: 13px; font-family: 'Figtree', sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; opacity: 0; transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .pin-card:hover .pin-delete { opacity: 1; }
+    .pin-delete:hover { background: #e5484d; border-color: #e5484d; color: #fff; }
+    .pin-fav {
+      position: absolute; top: 8px; left: 8px; z-index: 2;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.38);
+      color: rgba(255,255,255,0.88);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; opacity: 0; transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .pin-fav svg { width: 13px; height: 13px; stroke: currentColor; }
+    .pin-card:hover .pin-fav, .pin-fav.fav-active { opacity: 1; }
+    .pin-fav:hover { background: rgba(229,72,77,0.85); border-color: rgba(229,72,77,0.85); color: #fff; }
+    .pin-fav.fav-active { color: #e5484d; }
+    .pin-fav.fav-active svg { fill: currentColor; }
+
+    .fav-filter-btn { display: inline-flex; align-items: center; gap: 6px; }
+    .fav-filter-btn svg { width: 13px; height: 13px; stroke: currentColor; }
+    .fav-filter-btn.active { color: #e5484d; border-color: rgba(229,72,77,0.45); background: rgba(229,72,77,0.12); }
+    .fav-filter-btn.active svg { fill: currentColor; }
+    .pin-thumb { width: 100%; display: block; object-fit: cover; }
+    .pin-body { padding: 10px 12px 12px; }
+    .pin-cap { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .pin-cap-txt {
+      font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85);
+      line-height: 1.35; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pin-stats {
+      font-size: 11px; color: var(--dim); font-weight: 500;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .table-count { font-size: 12px; color: var(--dim); font-weight: 500; margin-bottom: 10px; }
+    .table-wrap {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 18px; overflow: hidden; margin-bottom: 40px;
+      overflow-x: auto;
+    }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 800px; }
+    .data-table thead tr { background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .data-table th {
+      padding: 12px 14px; text-align: left;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+      text-transform: uppercase; color: var(--dim); white-space: nowrap;
+    }
+    .data-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.10s ease; }
+    .data-table tbody tr:last-child { border-bottom: none; }
+    .data-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+    .data-table td {
+      padding: 10px 14px; color: rgba(255,255,255,0.70);
+      max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .row-delete {
+      background: rgba(229,72,77,0.12); border: 1px solid rgba(229,72,77,0.35);
+      color: #e5484d; font-size: 11px; font-weight: 700; font-family: 'Figtree', sans-serif;
+      padding: 5px 12px; border-radius: 8px; cursor: pointer;
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+    .row-delete:hover { background: #e5484d; color: #fff; }
+    .data-table .col-id   { color: var(--dim); font-weight: 600; font-size: 12px; }
+    .data-table .col-url  { color: var(--dim); font-size: 11px; font-family: monospace; }
+    .data-table .col-num  { color: rgba(255,255,255,0.55); }
+
+    .plat-badge {
+      display: inline-block; padding: 2px 9px; border-radius: 9999px;
+      font-size: 11px; font-weight: 700; color: #fff;
+    }
+
+    /* "Details" / "Expand" pill on hover (used by .bow-card) */
+    .c-expand {
+      position: absolute; top: 10px; right: 10px;
+      padding: 6px 14px; border-radius: 9999px;
+      font-size: 11px; font-weight: 700; color: #fff;
+      background: rgba(0,0,0,0.75);
+      border: 1px solid rgba(255,255,255,0.35);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.60);
+      opacity: 0; transition: opacity 0.15s ease; pointer-events: none;
+    }
+
+    .lb {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.18s ease;
+    }
+    .lb.open { opacity: 1; pointer-events: auto; }
+    .lb-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.90);
+      backdrop-filter: blur(12px);
+      cursor: zoom-out;
+    }
+    .lb-img-wrap { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; animation: popIn 0.28s cubic-bezier(.2,.8,.2,1) both; }
+    .lb-img {
+      max-width: 88vw; max-height: 80vh; object-fit: contain;
+      border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.85);
+    }
+    .lb-caption { margin-top: 16px; font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.26); text-align: center; max-width: 700px; word-break: break-all; }
+
+    .lb-panel {
+      position: relative; z-index: 1;
+      background: rgba(11,11,20,0.97); border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 22px; padding: 28px;
+      max-width: 520px; width: 90vw; max-height: 85vh; overflow-y: auto;
+      backdrop-filter: blur(20px); box-shadow: 0 32px 80px rgba(0,0,0,0.85);
+      scrollbar-width: thin; scrollbar-color: rgba(79,110,247,0.18) transparent;
+      animation: popIn 0.28s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .lb-panel::-webkit-scrollbar { width: 3px; }
+    .lb-panel::-webkit-scrollbar-thumb { background: rgba(79,110,247,0.22); border-radius: 4px; }
+    .lb-panel-badge {
+      display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 1.3px;
+      text-transform: uppercase; padding: 4px 13px; border-radius: 9999px;
+      margin-bottom: 16px; color: #fff;
+    }
+    .lb-panel-desc  { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.65; margin-bottom: 20px; }
+    .lb-sub-lbl     { font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
+    .lb-reuse       { font-size: 13px; color: var(--muted); line-height: 1.65; margin-bottom: 20px; }
+    .lb-meta-txt    { font-size: 11px; color: var(--dim); font-family: monospace; letter-spacing: 0.3px; }
+    .lb-panel-thumb { width: 100%; border-radius: 14px; margin-bottom: 20px; display: block; box-shadow: 0 8px 40px rgba(0,0,0,0.65); }
+
+    .lb-hook-wrap {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: row; gap: 24px;
+      align-items: stretch;
+      max-width: 94vw; max-height: 88vh;
+      animation: popIn 0.28s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .lb-hook-img {
+      flex-shrink: 0;
+      max-height: 80vh; max-width: 38vw;
+      width: auto; display: block;
+      border-radius: 18px; object-fit: contain;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.85);
+      align-self: flex-start;
+      cursor: pointer;
+    }
+    .lb-hook-info {
+      width: 560px; flex-shrink: 0;
+      max-height: 80vh; overflow-y: auto;
+      background: rgba(11,11,20,0.97);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 22px; padding: 32px 38px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.85);
+      position: relative;
+      scrollbar-width: thin; scrollbar-color: rgba(79,110,247,0.18) transparent;
+    }
+    .lb-eng-row {
+      display: flex; flex-wrap: wrap; gap: 14px;
+      margin-bottom: 20px; padding: 16px 18px;
+      background: rgba(255,255,255,0.04); border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .lb-eng-item { flex: 1 1 70px; min-width: 0; }
+    .lb-eng-num {
+      font-size: clamp(14px, 3vw, 22px); font-weight: 800; color: #fff;
+      letter-spacing: -0.5px; line-height: 1.25;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      cursor: default;
+    }
+    .lb-eng-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--dim); margin-top: 3px;
+    }
+    .lb-repl-text {
+      font-size: 12px; color: rgba(255,255,255,0.60); line-height: 1.75;
+      display: -webkit-box;
+      -webkit-line-clamp: 9;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      white-space: pre-line;
+    }
+    .lb-hook-info::-webkit-scrollbar { width: 3px; }
+    .lb-hook-info::-webkit-scrollbar-thumb { background: rgba(79,110,247,0.22); border-radius: 4px; }
+
+    .bow-lb-wrap {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: row; gap: 20px;
+      align-items: stretch;
+      max-width: 90vw; max-height: 88vh;
+      animation: popIn 0.28s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .bow-lb-img {
+      flex-shrink: 0;
+      max-height: 80vh; max-width: 38vw;
+      width: auto; display: block;
+      border-radius: 18px; object-fit: contain;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.85);
+      align-self: flex-start;
+    }
+    .bow-lb-info {
+      width: 380px; flex-shrink: 0;
+      overflow-y: auto;
+      background: rgba(11,11,20,0.97);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 22px; padding: 24px 28px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.85);
+      position: relative;
+      scrollbar-width: thin; scrollbar-color: rgba(79,110,247,0.18) transparent;
+    }
+    .bow-lb-info::-webkit-scrollbar { width: 3px; }
+    .bow-lb-info::-webkit-scrollbar-thumb { background: rgba(79,110,247,0.22); border-radius: 4px; }
+
+    .lb-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.32);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.88); font-size: 16px;
+      font-family: 'Figtree', sans-serif;
+      transition: background 0.14s ease, color 0.14s ease;
+      z-index: 2;
+    }
+    .lb-close:hover { background: rgba(255,255,255,0.24); color: #fff; }
+    .lb-delete-btn {
+      position: absolute; top: 14px; right: 54px; z-index: 2;
+      padding: 0 14px; height: 30px; border-radius: 9999px;
+      background: rgba(229,72,77,0.16); border: 1px solid rgba(229,72,77,0.55);
+      color: #ff6b6f; font-size: 11px; font-weight: 700; font-family: 'Figtree', sans-serif;
+      cursor: pointer; transition: background 0.14s ease, color 0.14s ease;
+    }
+    .lb-delete-btn:hover { background: #e5484d; color: #fff; }
+    .lb-fav-btn {
+      position: absolute; top: 14px; right: 132px; z-index: 2;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.32);
+      color: rgba(255,255,255,0.88);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background 0.14s ease, color 0.14s ease;
+    }
+    .lb-fav-btn svg { width: 15px; height: 15px; stroke: currentColor; }
+    .lb-fav-btn:hover { background: rgba(229,72,77,0.20); color: #e5484d; }
+    .lb-fav-btn.fav-active { color: #e5484d; }
+    .lb-fav-btn.fav-active svg { fill: currentColor; }
+
+    .tabs-header { display: flex; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 18px; gap: 0; }
+    .tab-btn {
+      padding: 9px 18px; background: none; border: none; border-bottom: 2px solid transparent;
+      font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 600;
+      color: var(--muted); cursor: pointer; margin-bottom: -1px;
+      transition: color 0.14s ease, border-color 0.14s ease;
+    }
+    .tab-btn:hover  { color: rgba(255,255,255,0.82); }
+    .tab-btn.active { color: #fff; border-bottom-color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .expander {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      margin-bottom: 12px; overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.40);
+      transition: border-color 0.15s ease, box-shadow 0.2s ease;
+    }
+    .expander.open { border-color: rgba(79,110,247,0.45); box-shadow: 0 8px 28px rgba(0,0,0,0.50); }
+    .exp-header {
+      padding: 13px 18px; cursor: pointer; user-select: none;
+      font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.82);
+      display: flex; align-items: center; gap: 10px;
+      transition: background 0.10s ease;
+    }
+    .exp-header:hover { background: rgba(255,255,255,0.02); }
+    .exp-chev-wrap {
+      display: flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; flex-shrink: 0;
+      overflow: hidden;
+    }
+    .exp-chev {
+      display: inline-block; width: 6px; height: 6px; flex-shrink: 0;
+      border-right: 1.5px solid rgba(255,255,255,0.30);
+      border-bottom: 1.5px solid rgba(255,255,255,0.30);
+      transform: rotate(-45deg); transition: transform 0.15s ease;
+    }
+    .expander.open .exp-chev { transform: rotate(45deg); }
+    .exp-body { display: none; padding: 0 18px 16px; }
+    .expander.open .exp-body { display: block; }
+    .exp-desc    { font-size: 14px; color: rgba(255,255,255,0.72); line-height: 1.65; margin-bottom: 12px; }
+    .exp-rl-lbl  { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); margin-bottom: 6px; }
+    .exp-reuse   { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+    .exp-caption { font-size: 11px; color: var(--dim); font-family: monospace; }
+
+    .rt-card {
+      padding: 18px 20px; margin-bottom: 12px;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.40);
+      backdrop-filter: blur(8px);
+    }
+    .rt-meta { font-size: 10px; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase; color: var(--dim); margin-bottom: 13px; }
+    .tactic-row  { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 9px; }
+    .tactic-num  {
+      flex-shrink: 0; width: 22px; height: 22px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; color: #fff;
+    }
+    .tactic-txt  { font-size: 13px; color: rgba(255,255,255,0.70); line-height: 1.60; }
+    .rt-url      { font-size: 11px; color: rgba(255,255,255,0.18); font-family: monospace; word-break: break-all; margin-top: 12px; }
+
+    .note-card {
+      padding: 18px 20px; margin-bottom: 12px;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.40);
+    }
+    .note-meta { font-size: 10px; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
+    .note-text { font-size: 14px; font-weight: 600; color: #fff; line-height: 1.65; margin-bottom: 10px; }
+    .note-url  { font-size: 11px; color: rgba(255,255,255,0.18); font-family: monospace; word-break: break-all; }
+
+    .empty {
+      padding: 44px 20px; text-align: center;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 18px; font-size: 14px; color: var(--muted);
+    }
+
+    .bow-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; max-width: 640px; line-height: 1.6; }
+    .bow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 48px; }
+    .bow-card {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: var(--radius); cursor: pointer; position: relative;
+      padding: 18px 18px 16px; min-height: 128px;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.40);
+      animation: fadeInUp 0.4s ease both;
+    }
+    .bow-card:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(0,0,0,0.55); }
+    .bow-card:hover .c-expand { opacity: 1; }
+    .bow-card:nth-child(1) { animation-delay: 0.02s; }
+    .bow-card:nth-child(2) { animation-delay: 0.06s; }
+    .bow-card:nth-child(3) { animation-delay: 0.10s; }
+    .bow-card:nth-child(4) { animation-delay: 0.14s; }
+    .bow-card:nth-child(5) { animation-delay: 0.18s; }
+    .bow-card:nth-child(6) { animation-delay: 0.22s; }
+    .bow-badge {
+      display: inline-block; align-self: flex-start; font-size: 9px; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase; padding: 4px 11px; border-radius: 9999px;
+    }
+    .bow-desc { font-size: 13px; font-weight: 700; color: #fff; line-height: 1.55; }
+    .bow-card.bow-empty { cursor: default; }
+    .bow-card.bow-empty:hover { transform: none; box-shadow: 0 4px 16px rgba(0,0,0,0.40); }
+    .bow-empty-txt { font-size: 12px; color: var(--dim); font-style: italic; }
+
+    .footer {
+      margin-top: 60px; padding: 20px 0;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      text-align: center; font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,0.16); letter-spacing: 0.4px;
+    }
+    .footer-brand { text-transform: uppercase; }
+
+    @media (max-width: 1024px) {
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      .main { padding: 30px 24px; }
+    }
+    @media (max-width: 900px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .bow-grid { grid-template-columns: repeat(2, 1fr); }
+      .pin-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      html, body { height: auto; overflow-x: hidden; overflow-y: visible; }
+      .layout { flex-direction: column; height: auto; overflow-x: hidden; }
+      .sidebar {
+        width: 100%; flex-direction: row; flex-wrap: wrap;
+        align-items: center; gap: 10px 18px; padding: 16px 18px;
+      }
+      .logo-wrap { margin-bottom: 0; padding: 0; }
+      .nav-items { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-bottom: 0; }
+      .sidebar-divider, .sidebar-hint { display: none; }
+      .main { padding: 24px 18px; overflow-y: visible; }
+      .page-title { font-size: 40px; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .bow-grid { grid-template-columns: 1fr; }
+      .lb-hook-wrap { flex-direction: column; align-items: center; max-height: 90vh; overflow-y: auto; }
+      .lb-hook-img { max-width: 100%; max-height: 50vh; align-self: center; }
+      .lb-hook-info { width: 100%; padding: 24px 22px; }
+      .bow-lb-wrap { flex-direction: column; align-items: center; max-height: 90vh; overflow-y: auto; }
+      .bow-lb-img { max-width: 100%; max-height: 50vh; align-self: center; }
+      .bow-lb-info { width: 100%; }
+      .pin-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    }
+    @media (max-width: 480px) {
+      .metrics-grid { grid-template-columns: 1fr; }
+      .filters-row { flex-direction: column; }
+      .filter-group, .filter-select { width: 100%; }
+      .filter-select { flex: 1; }
+      .search-wrap { max-width: none; }
+      .view-toggle { margin-left: 0; }
+      .pin-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Ambient dot-grid + glows -->
+<div class="dot-grid"></div>
+<div class="glow glow-1"></div>
+<div class="glow glow-2"></div>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="logo-wrap">
+      <div class="logo-name">HookLab</div>
+      <div class="logo-sub">Creative Intelligence</div>
+    </div>
+
+    <div class="nav-items">
+      <div class="nav-item active" data-nav="library" onclick="switchNav('library', this)">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+        Library
+      </div>
+      <div class="nav-item" data-nav="thisweek" onclick="switchNav('thisweek', this)">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+        </svg>
+        This Week
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-hint">
+      Run <code>/hooklab &lt;url&gt;</code> to add content.
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-title">HookLab</div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics-grid" id="metrics-grid">
+      <div class="metric-card"><div class="metric-lbl">Total Content</div><div class="metric-val" id="m-total">—</div></div>
+      <div class="metric-card"><div class="metric-lbl">Video Hooks</div><div class="metric-val" id="m-videos">—</div></div>
+      <div class="metric-card"><div class="metric-lbl">Assets in Library</div><div class="metric-val" id="m-assets">—</div></div>
+      <div class="metric-card"><div class="metric-lbl">Top Hook Type</div><div class="metric-val" id="m-toptype">—</div></div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid" id="charts-grid">
+      <div class="chart-card">
+        <div class="chart-lbl">Platform Breakdown</div>
+        <div class="chart-wrap"><canvas id="chart-platform"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-lbl">Hook Type Distribution</div>
+        <div class="chart-wrap"><canvas id="chart-types"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Sections -->
+    <div id="sec-library"   class="section active"></div>
+    <div id="sec-thisweek"  class="section"></div>
+
+    <div class="footer"><span class="footer-brand">HookLab</span> &nbsp;&middot;&nbsp; made by CoolerGit</div>
+  </main>
+</div>
+
+<!-- Lightbox -->
+<div class="lb" id="lb" onclick="lbBackdropClick(event)">
+  <div class="lb-backdrop"></div>
+  <div id="lb-inner"></div>
+</div>
+
+<script>
+const PLATFORM_COLOURS = {
+  instagram: '#C13584',
+  tiktok:    '#00f2ea',
+  youtube:   '#FF4444',
+  pinterest: '#E60023',
+};
+const TYPE_COLOURS = {
+  hook_template:     ['#4F6EF7', 'Hook Template'],
+  audio_pattern:     ['#10b981', 'Audio Pattern'],
+  emotional_trigger: ['#7C5CFF', 'Emotional Trigger'],
+};
+const BOW_COLOURS = {
+  layout_pattern:    '#f97316',
+  audio_pattern:     '#10b981',
+  colour_palette:    '#06b6d4',
+  hook_template:     '#4F6EF7',
+  text_style:        '#ec4899',
+  retention_tactics: '#f59e0b',
+};
+let _data = null;
+let _charts = {};
+
+const heartIcon = filled => `<svg viewBox="0 0 24 24" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>`;
+
+const trunc = (s, n) => s && s.length > n ? s.slice(0, n) + '…' : (s || '');
+const title = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+const platColour = p => PLATFORM_COLOURS[(p || '').toLowerCase()] || '#4F6EF7';
+
+function cleanNote(v) {
+  if (!v) return '';
+  let s = String(v).trim();
+  if (s.startsWith('﻿')) s = s.slice(1);
+  if (s.startsWith('\xef\xbb\xbf')) s = s.slice(3);
+  return s.trim();
+}
+
+function fmtNum(n) {
+  if (n == null) return '—';
+  return Number(n).toLocaleString();
+}
+
+function fmtCompact(n) {
+  if (n == null) return '—';
+  return Number(n).toLocaleString(undefined, { notation: 'compact', maximumFractionDigits: 1 });
+}
+
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function countUp(el, target, duration = 650) {
+  if (!el) return;
+  if (prefersReducedMotion) { el.textContent = target.toLocaleString(); return; }
+  const t0 = performance.now();
+  const step = now => {
+    const p = Math.min((now - t0) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(target * eased).toLocaleString();
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function switchNav(id, el) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openLb(html) {
+  document.getElementById('lb-inner').innerHTML = html;
+  document.getElementById('lb').classList.add('open');
+  document.addEventListener('keydown', lbKey);
+}
+function closeLb() {
+  document.getElementById('lb').classList.remove('open');
+  document.getElementById('lb-inner').innerHTML = '';
+  document.removeEventListener('keydown', lbKey);
+}
+function lbKey(e) { if (e.key === 'Escape') closeLb(); }
+function lbBackdropClick(e) { if (e.target.classList.contains('lb-backdrop') || e.target.classList.contains('lb')) closeLb(); }
+
+async function deleteContent(table, id) {
+  if (!confirm('Delete this permanently? This removes it from the database, the thumbnail file, and every part of this dashboard. This cannot be undone.')) return;
+  try {
+    const res  = await fetch('/api/delete', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ table, id }),
+    });
+    const result = await res.json();
+    if (!res.ok || !result.ok) {
+      alert('Delete failed: ' + (result.error || res.status));
+      return;
+    }
+    closeLb();
+    await init();
+  } catch (e) {
+    alert('Delete failed: ' + e.message);
+  }
+}
+
+const _hookMap = {};
+
+function _openHookLb(hookId) {
+  const h = _hookMap[hookId];
+  if (!h) return;
+
+  const pc       = platColour(h.platform);
+  const plat     = title(h.platform || 'Unknown');
+  const hookType = title(h.hook_type || '—');
+  const heading  = cleanNote(h.content_title) || hookType;
+  const demo     = title(h.target_demographic || '');
+  const niche    = title(h.niche || '');
+  const date     = (h.analyzed_at || '').slice(0, 10);
+
+  // Plain thumbnail, click-through to the original post — no inline
+  // embed. TikTok/Instagram/YouTube iframes were tried and dropped: their
+  // chrome (header, comments, like bar) can't be stripped from a
+  // cross-origin iframe, and the crop/scale workarounds never looked clean.
+  const thumbHtml = h.thumbnail_url && h.url
+    ? `<a href="${esc(h.url)}" target="_blank" rel="noopener"><img class="lb-hook-img" src="${esc(h.thumbnail_url)}" alt="${esc(heading)}" title="Open original on ${esc(plat)}"></a>`
+    : (h.thumbnail_url ? `<img class="lb-hook-img" src="${esc(h.thumbnail_url)}" alt="${esc(heading)}">` : '');
+
+  // Engagement block
+  const hasEng = h.views != null || h.likes != null || h.comments != null;
+  const engHtml = hasEng ? `
+    <div class="lb-eng-row">
+      ${h.views    != null ? `<div class="lb-eng-item"><div class="lb-eng-num" title="${fmtNum(h.views)}">${fmtCompact(h.views)}</div><div class="lb-eng-label">Views</div></div>` : ''}
+      ${h.likes    != null ? `<div class="lb-eng-item"><div class="lb-eng-num" title="${fmtNum(h.likes)}">${fmtCompact(h.likes)}</div><div class="lb-eng-label">Likes</div></div>` : ''}
+      ${h.comments != null ? `<div class="lb-eng-item"><div class="lb-eng-num" title="${fmtNum(h.comments)}">${fmtCompact(h.comments)}</div><div class="lb-eng-label">Comments</div></div>` : ''}
+    </div>` : '';
+
+  // Tags row (hook type + demographic + niche) — hook type demoted to a tag
+  // now that the title takes the primary heading spot.
+  const tags = [hookType !== '—' ? hookType : '', demo, niche].filter(Boolean);
+  const tagsHtml = tags.length ? `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+      ${tags.map(t => `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:9999px;padding:5px 13px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.55);">${esc(t)}</span>`).join('')}
+    </div>` : '';
+
+  // Hook replication template — the hook_template asset's description (if one
+  // was extracted) is merged into one flowing paragraph rather than shown as
+  // its own card in Extracted Assets or tacked on as a separate, unlabeled
+  // sentence, since it's the same content restated. This is the single most
+  // actionable field for replicating a hook, so it gets a deliberate accent
+  // border rather than sitting at the same visual weight as everything else.
+  const hookTemplateAsset = ((_data && _data.assets) || [])
+    .find(a => a.source_table === 'hooks' && Number(a.source_id) === h.id && a.asset_type === 'hook_template');
+  const replParts = [h.replication_template, hookTemplateAsset && hookTemplateAsset.asset_description].filter(Boolean);
+  const replHtml = replParts.length ? `
+    <div style="border-left:2px solid var(--accent);padding-left:14px;margin-top:18px;">
+      <div class="lb-sub-lbl" style="margin-top:0;">Replication Template</div>
+      <div class="lb-repl-text" style="-webkit-line-clamp:unset;">${esc(replParts.join(' '))}</div>
+    </div>` : '';
+
+  // Retention tactics
+  let tactics = [];
+  try { tactics = JSON.parse(h.retention_tactics || '[]'); } catch {}
+  const tacticsHtml = tactics.length ? `
+    <div class="lb-sub-lbl" style="margin-top:18px;">Retention Tactics</div>
+    ${tactics.map((t, i) => `
+      <div class="tactic-row">
+        <div class="tactic-num">${i + 1}</div>
+        <div class="tactic-txt">${esc(t)}</div>
+      </div>`).join('')}` : '';
+
+  // Extracted assets tied to this hook (same info shown in the Asset Library tab, scoped to this hook)
+  // hook_template is excluded here — its description now lives under Replication Template above.
+  // Every badge here uses the one accent colour rather than a colour per asset
+  // type: this is a flat list of assets for a single hook, not a category grid
+  // (unlike Assets of the Week, which keeps per-category BOW_COLOURS since it
+  // genuinely differentiates 6 categories at once), so a colour-per-type here
+  // was just noise, not signal.
+  const relAssets = ((_data && _data.assets) || [])
+    .filter(a => a.source_table === 'hooks' && Number(a.source_id) === h.id && a.asset_type !== 'hook_template');
+  const assetsHtml = relAssets.length ? `
+    <div class="lb-sub-lbl" style="margin-top:18px;">Extracted Assets</div>
+    ${relAssets.map(a => {
+      const label = title((a.asset_type || 'asset').replace(/_/g, ' '));
+      return `
+      <div style="margin-bottom:10px;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;">
+        <span class="lb-panel-badge" style="background:rgba(79,110,247,0.14);border:1px solid rgba(79,110,247,0.40);color:var(--accent);margin-bottom:8px;">${esc(label)}</span>
+        <div style="font-size:12px;color:rgba(255,255,255,0.75);line-height:1.55;${a.reuse_instruction ? 'margin-bottom:6px;' : ''}">${esc(a.asset_description || '')}</div>
+        ${a.reuse_instruction ? `<div style="font-size:11px;color:var(--muted);line-height:1.55;">${esc(a.reuse_instruction)}</div>` : ''}
+      </div>`;
+    }).join('')}` : '';
+
+  // Personal note added at ingest time, if any
+  const personalNote = cleanNote(h.personal_note);
+  const noteHtml = personalNote ? `
+    <div class="lb-sub-lbl" style="margin-top:18px;">Personal Note</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.72);line-height:1.65;">${esc(personalNote)}</div>` : '';
+
+  openLb(`
+    <div class="lb-hook-wrap">
+      ${thumbHtml}
+      <div class="lb-hook-info">
+        <button class="lb-close" onclick="closeLb()">✕</button>
+        <button class="lb-delete-btn" title="Delete permanently" onclick="deleteContent('hooks', ${h.id});">Delete</button>
+        <button class="lb-fav-btn${h.is_favourite ? ' fav-active' : ''}" title="${h.is_favourite ? 'Remove from favourites' : 'Add to favourites'}" onclick="toggleFavouriteInLb('hooks', ${h.id});">${heartIcon(h.is_favourite)}</button>
+        <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:4px;">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+                       background:${pc};box-shadow:0 0 9px ${pc};"></span>
+          <span style="font-size:11px;font-weight:700;letter-spacing:1px;
+                       text-transform:uppercase;color:${pc};">${esc(plat)}</span>
+        </div>
+        <div class="lb-panel-desc">${esc(heading)}</div>
+        ${tagsHtml}
+        ${engHtml}
+        ${replHtml}
+        ${tacticsHtml}
+        ${assetsHtml}
+        ${noteHtml}
+        <div class="lb-sub-lbl" style="margin-top:18px;">Source</div>
+        <div class="lb-meta-txt" style="word-break:break-all;line-height:1.65;">${esc(h.url || '—')}</div>
+      </div>
+    </div>`);
+}
+
+function renderMetrics(d) {
+  const total    = d.hooks.length + d.ingested.length;
+  const videos   = d.hooks.length;
+  const assetCnt = d.assets.length;
+
+  const types = [
+    ...d.hooks.map(h => h.hook_type),
+    ...d.ingested.map(i => i.hook_type),
+  ].filter(Boolean).map(t => title(t));
+  const counts = {};
+  types.forEach(t => counts[t] = (counts[t] || 0) + 1);
+  const topType = Object.entries(counts).sort((a,b) => b[1]-a[1])[0]?.[0] || '—';
+
+  countUp(document.getElementById('m-total'), total);
+  countUp(document.getElementById('m-videos'), videos);
+  countUp(document.getElementById('m-assets'), assetCnt);
+  document.getElementById('m-toptype').textContent = topType;
+}
+
+function renderCharts(d) {
+  Chart.defaults.font.family = "'Figtree', sans-serif";
+  Chart.defaults.color = 'rgba(255,255,255,0.40)';
+
+  // Platform breakdown
+  const platMap = {};
+  d.hooks.forEach(h => {
+    const p = title(h.platform || 'Unknown');
+    platMap[p] = (platMap[p] || 0) + 1;
+  });
+  const platEntries = Object.entries(platMap).sort((a,b) => b[1]-a[1]);
+  const CHART_COLOURS = ['#4F6EF7','#7C5CFF','#10b981','#f59e0b','#ec4899','#00f2ea'];
+
+  if (_charts.platform) _charts.platform.destroy();
+  _charts.platform = new Chart(document.getElementById('chart-platform'), {
+    type: 'bar',
+    data: {
+      labels: platEntries.map(e => e[0]),
+      datasets: [{
+        data: platEntries.map(e => e[1]),
+        backgroundColor: CHART_COLOURS.slice(0, platEntries.length),
+        borderRadius: 8,
+        borderSkipped: false,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: 'rgba(11,11,20,0.95)',
+        borderColor: 'rgba(255,255,255,0.10)', borderWidth: 1,
+        titleColor: '#fff', bodyColor: 'rgba(255,255,255,0.60)',
+        padding: 10, cornerRadius: 10,
+      }},
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0)' }, ticks: { color: 'rgba(255,255,255,0.30)' } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.28)' }, beginAtZero: true },
+      },
+    },
+  });
+
+  // Hook type distribution
+  const typeMap = {};
+  [...d.hooks, ...d.ingested].forEach(r => {
+    const t = title(r.hook_type || '');
+    if (t) typeMap[t] = (typeMap[t] || 0) + 1;
+  });
+  const typeEntries = Object.entries(typeMap).sort((a,b) => b[1]-a[1]).slice(0, 8);
+
+  if (_charts.types) _charts.types.destroy();
+  _charts.types = new Chart(document.getElementById('chart-types'), {
+    type: 'bar',
+    data: {
+      labels: typeEntries.map(e => e[0]),
+      datasets: [{
+        data: typeEntries.map((e, i) => e[1]),
+        backgroundColor: typeEntries.map((_, i) => `rgba(79,110,247,${Math.max(0.35, 1 - i * 0.09)})`),
+        borderRadius: 6,
+        borderSkipped: false,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: 'rgba(11,11,20,0.95)',
+        borderColor: 'rgba(255,255,255,0.10)', borderWidth: 1,
+        titleColor: '#fff', bodyColor: 'rgba(255,255,255,0.60)',
+        padding: 10, cornerRadius: 10,
+      }},
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.28)' }, beginAtZero: true },
+        y: { grid: { color: 'rgba(255,255,255,0)' }, ticks: { color: 'rgba(255,255,255,0.30)' } },
+      },
+    },
+  });
+}
+
+const _bowMap = {};
+
+function _bowCardHtml(cat) {
+  const colour = BOW_COLOURS[cat.key] || '#4F6EF7';
+  if (!cat.asset) {
+    return `
+    <div class="bow-card bow-empty">
+      <div class="bow-badge" style="background:${colour}22;border:1px solid ${colour}55;color:${colour};">${esc(cat.label)}</div>
+      <div class="bow-empty-txt">Nothing qualified this week.</div>
+    </div>`;
+  }
+  const a    = cat.asset;
+  const desc = cat.key === 'retention_tactics'
+    ? (a.tactics || []).slice(0, 3).join(' · ')
+    : (a.asset_description || '');
+  return `
+  <div class="bow-card" onclick="openBowLb('${cat.key}')">
+    <div class="bow-badge" style="background:${colour}22;border:1px solid ${colour}55;color:${colour};">${esc(cat.label)}</div>
+    <div class="bow-desc">${esc(trunc(desc, 140))}</div>
+    <div class="c-expand">Expand</div>
+  </div>`;
+}
+
+function renderBestOfWeek(d) {
+  const bow = d.best_of_week;
+  if (!bow) return '';
+  bow.categories.forEach(cat => { _bowMap[cat.key] = cat; });
+  const cards = bow.categories.map(_bowCardHtml).join('');
+  return `
+  <div class="bow-section">
+    <div class="section-title">Assets of the Week</div>
+    <div class="bow-sub">Best-performing reel this week in each category, ranked by checklist pass rate then views. ${bow.week_hook_count} reel(s) ingested this week.</div>
+    <div class="bow-grid">${cards}</div>
+  </div>`;
+}
+
+function openBowLb(key) {
+  const cat = _bowMap[key];
+  if (!cat || !cat.asset) return;
+  const colour   = BOW_COLOURS[key] || '#4F6EF7';
+  const a        = cat.asset;
+  const plat     = title(a.platform || 'Unknown');
+  const rate     = a.checklist_summary || '—';
+  const metaLine = `Hook #${a.hook_id} · ${esc(plat)} · ${esc(rate)}${a.views != null ? ' · ' + fmtNum(a.views) + ' views' : ''}`;
+
+  const bodyHtml = key === 'retention_tactics'
+    ? `<div class="lb-sub-lbl">Tactics</div>` + (a.tactics || []).map((t, i) => `
+        <div class="tactic-row">
+          <div class="tactic-num">${i + 1}</div>
+          <div class="tactic-txt">${esc(t)}</div>
+        </div>`).join('')
+    : `<div class="lb-panel-desc">${esc(a.asset_description || '')}</div>
+       <div class="lb-sub-lbl">How to reuse</div>
+       <div class="lb-reuse">${esc(a.reuse_instruction || '')}</div>`;
+
+  const infoInner = `
+    <button class="lb-close" onclick="closeLb()">✕</button>
+    <div class="lb-panel-badge" style="background:${colour}22;border:1px solid ${colour}55;">${esc(cat.label)}</div>
+    ${bodyHtml}
+    <div class="lb-meta-txt" style="margin-top:16px;">${metaLine}</div>`;
+
+  // Side-by-side (image left, text right, text fills the image's height) when a
+  // thumbnail exists — same pattern as the hook lightbox. Full-width text panel
+  // when it doesn't (e.g. Retention Tactics often has no thumbnail).
+  if (a.thumbnail_url) {
+    openLb(`
+      <div class="bow-lb-wrap">
+        <img class="bow-lb-img" src="${esc(a.thumbnail_url)}" alt="thumbnail" loading="lazy">
+        <div class="bow-lb-info">${infoInner}</div>
+      </div>`);
+  } else {
+    openLb(`<div class="lb-panel">${infoInner}</div>`);
+  }
+}
+
+function tacticsCount(raw) {
+  try { return JSON.parse(raw || '[]').length; } catch { return 0; }
+}
+
+// Full-text search index: pulls in every free-text field the AI writes
+// (explanations, weaknesses, replication templates, personal notes) so a
+// search for "Chipotle" finds it even though it's not a category field
+// like platform/hook_type/niche.
+function searchBlobFor(row) {
+  const parts = [
+    row.id, row.platform, row.hook_type, row.target_demographic, row.niche,
+    row.content_type, row.url, row.source, row.checklist_summary,
+    row.content_title, row.overall_explanation, row.visual_explanation,
+    row.pacing_explanation, row.colour_explanation, row.text_explanation,
+    row.audio_explanation, row.weakness, row.replication_template,
+    cleanNote(row.personal_note),
+  ];
+  return esc(parts.filter(Boolean).join(' ').toLowerCase());
+}
+
+function buildLibraryRows(d) {
+  const rows = [];
+  d.hooks.forEach(h => rows.push({
+    id:    h.id, type: 'Video', table: 'hooks',
+    platform:    title(h.platform || '') || '—',
+    source:      h.url || '',
+    hook_type:   title(h.hook_type || ''),
+    content_title: cleanNote(h.content_title) || '',
+    demographic: title(h.target_demographic || '') || '—',
+    niche:       title(h.niche || '') || '—',
+    views:       h.views, likes: h.likes, comments: h.comments,
+    date:        (h.analyzed_at || '').slice(0, 10),
+    thumbnail_url: h.thumbnail_url || null,
+    tactics_count: tacticsCount(h.retention_tactics),
+    is_favourite: !!h.is_favourite,
+    search_blob: searchBlobFor(h),
+  }));
+  d.ingested.forEach(i => rows.push({
+    id:    i.id, type: title(i.content_type || 'Content'), table: 'ingested_content',
+    platform: '—', source: i.source || '',
+    hook_type:   title(i.hook_type || ''),
+    demographic: title(i.target_demographic || '') || '—',
+    niche:       title(i.niche || '') || '—',
+    views: null, likes: null, comments: null,
+    date:        (i.analyzed_at || '').slice(0, 10),
+    thumbnail_url: null,
+    tactics_count: tacticsCount(i.retention_tactics),
+    is_favourite: !!i.is_favourite,
+    search_blob: searchBlobFor(i),
+  }));
+  return rows;
+}
+
+function renderLibrary(d) {
+  const rows = buildLibraryRows(d);
+
+  // Build filter options
+  const platforms = [...new Set(rows.map(r => r.platform).filter(p => p !== '—'))].sort();
+  const demos     = [...new Set(rows.map(r => r.demographic).filter(d => d !== '—'))].sort();
+  const niches    = [...new Set(rows.map(r => r.niche).filter(n => n !== '—'))].sort();
+
+  const makeOpts = arr => arr.map(v => `<option>${esc(v)}</option>`).join('');
+
+  const tableRows = rows.map(r => {
+    const pc = platColour(r.platform);
+    const platHtml = r.platform !== '—'
+      ? `<span class="plat-badge" style="background:${pc}22;border:1px solid ${pc}44;">${esc(r.platform)}</span>`
+      : '—';
+    return `
+    <tr data-platform="${esc(r.platform)}" data-demo="${esc(r.demographic)}" data-niche="${esc(r.niche)}" data-fav="${r.is_favourite ? '1' : '0'}" data-search="${r.search_blob}">
+      <td class="col-id">${r.id}</td>
+      <td>${platHtml}</td>
+      <td>${esc(r.hook_type || '—')}</td>
+      <td>${esc(r.demographic)}</td>
+      <td>${esc(r.niche)}</td>
+      <td class="col-num">${fmtNum(r.views)}</td>
+      <td class="col-num">${fmtNum(r.likes)}</td>
+      <td class="col-num">${fmtNum(r.comments)}</td>
+      <td>${esc(r.date)}</td>
+      <td class="col-url" title="${esc(r.source)}">${esc(trunc(r.source, 55))}</td>
+      <td><button class="row-delete" title="Delete permanently" onclick="deleteContent('${r.table}', ${r.id});">Delete</button></td>
+    </tr>`;
+  }).join('');
+
+  // Lightbox looks hooks up by id regardless of which view (grid/table) triggered it
+  d.hooks.forEach(h => { _hookMap[h.id] = h; });
+
+  const gridHtml = buildPinGrid(rows);
+
+  document.getElementById('sec-library').innerHTML = `
+    <div class="section-title">Content Library</div>
+    <div class="filters-row">
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="f-search" type="text" placeholder="Search library..." oninput="filterLibrary()">
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="f-plat">Platform:</label>
+        <select class="filter-select" id="f-plat" onchange="filterLibrary()">
+          <option>All</option>${makeOpts(platforms)}
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="f-demo">Demographic:</label>
+        <select class="filter-select" id="f-demo" onchange="filterLibrary()">
+          <option>All</option>${makeOpts(demos)}
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="f-niche">Niche:</label>
+        <select class="filter-select" id="f-niche" onchange="filterLibrary()">
+          <option>All</option>${makeOpts(niches)}
+        </select>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn fav-filter-btn" id="btn-fav-only" onclick="toggleFavOnly()">${heartIcon(false)} Favourites</button>
+        <button class="view-btn active" id="btn-view-grid" onclick="setLibraryView('grid')">Grid</button>
+        <button class="view-btn" id="btn-view-table" onclick="setLibraryView('table')">Table</button>
+      </div>
+    </div>
+    <div class="table-count" id="table-count">Showing ${rows.length} entries</div>
+    <div class="lib-view active" id="lib-view-grid">${gridHtml}</div>
+    <div class="lib-view" id="lib-view-table">
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Platform</th><th>Hook Type</th>
+              <th>Demographic</th><th>Niche</th>
+              <th>Views</th><th>Likes</th><th>Comments</th>
+              <th>Date</th><th>Source</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="table-body">${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function buildPinGrid(rows, emptyMsg) {
+  if (!rows.length) return `<div class="empty">${esc(emptyMsg || 'No content yet.')}</div>`;
+
+  const cards = rows.map(r => {
+    const pc = platColour(r.platform);
+    const dotHtml = r.platform !== '—'
+      ? `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${pc};flex-shrink:0;"></span>`
+      : '';
+
+    // One condensed stat line instead of a stacked block: "18.4M views · 1.8M likes"
+    const statBits = [];
+    if (r.views    != null) statBits.push(`${fmtCompact(r.views)} views`);
+    if (r.likes    != null) statBits.push(`${fmtCompact(r.likes)} likes`);
+    const statLine = statBits.length ? `<div class="pin-stats">${esc(statBits.join(' · '))}</div>` : '';
+
+    const caption = r.content_title || r.hook_type || r.type;
+    const imgHtml = r.thumbnail_url ? `<img class="pin-thumb" src="${esc(r.thumbnail_url)}" alt="${esc(caption)}" loading="lazy">` : '';
+    const clickAttr = (r.type === 'Video' && r.thumbnail_url) ? ` onclick="_openHookLb(${r.id})"` : '';
+
+    const favActive = r.is_favourite ? ' fav-active' : '';
+    const favTitle  = r.is_favourite ? 'Remove from favourites' : 'Add to favourites';
+
+    return `
+    <div class="pin-card" data-platform="${esc(r.platform)}" data-demo="${esc(r.demographic)}" data-niche="${esc(r.niche)}" data-fav="${r.is_favourite ? '1' : '0'}" data-search="${r.search_blob}"${clickAttr}>
+      <button class="pin-fav${favActive}" title="${favTitle}" onclick="event.stopPropagation(); toggleFavourite('${r.table}', ${r.id});">${heartIcon(r.is_favourite)}</button>
+      <button class="pin-delete" title="Delete permanently" onclick="event.stopPropagation(); deleteContent('${r.table}', ${r.id});">✕</button>
+      ${imgHtml}
+      <div class="pin-body">
+        <div class="pin-cap">${dotHtml}<span class="pin-cap-txt" title="${esc(caption)}">${esc(caption)}</span></div>
+        ${statLine}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="pin-grid" id="pin-grid">${cards}</div>`;
+}
+
+function setLibraryView(view) {
+  document.getElementById('btn-view-grid').classList.toggle('active', view === 'grid');
+  document.getElementById('btn-view-table').classList.toggle('active', view === 'table');
+  document.getElementById('lib-view-grid').classList.toggle('active', view === 'grid');
+  document.getElementById('lib-view-table').classList.toggle('active', view === 'table');
+}
+
+let _favOnly = false;
+
+function toggleFavOnly() {
+  _favOnly = !_favOnly;
+  document.getElementById('btn-fav-only')?.classList.toggle('active', _favOnly);
+  filterLibrary();
+}
+
+function filterLibrary() {
+  const plat   = document.getElementById('f-plat')?.value   || 'All';
+  const demo   = document.getElementById('f-demo')?.value   || 'All';
+  const niche  = document.getElementById('f-niche')?.value  || 'All';
+  const search = (document.getElementById('f-search')?.value || '').trim().toLowerCase();
+
+  let count = 0;
+
+  const applyFilter = el => {
+    const show =
+      (plat   === 'All' || el.dataset.platform === plat)  &&
+      (demo   === 'All' || el.dataset.demo     === demo)  &&
+      (niche  === 'All' || el.dataset.niche    === niche) &&
+      (!_favOnly || el.dataset.fav === '1')                &&
+      (!search || (el.dataset.search || '').includes(search));
+    el.style.display = show ? '' : 'none';
+    return show;
+  };
+
+  const tbody = document.getElementById('table-body');
+  if (tbody) Array.from(tbody.rows).forEach(row => { if (applyFilter(row)) count++; });
+
+  const grid = document.getElementById('pin-grid');
+  if (grid) {
+    count = 0;
+    Array.from(grid.children).forEach(card => { if (applyFilter(card)) count++; });
+  }
+
+  const el = document.getElementById('table-count');
+  if (el) el.textContent = `Showing ${count} entries`;
+}
+
+function renderThisWeek(d) {
+  document.getElementById('sec-thisweek').innerHTML = renderBestOfWeek(d);
+}
+
+async function toggleFavourite(table, id) {
+  try {
+    const res    = await fetch('/api/favourite', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ table, id }),
+    });
+    const result = await res.json();
+    if (!res.ok || !result.ok) {
+      alert('Could not update favourite: ' + (result.error || res.status));
+      return;
+    }
+    await init();
+  } catch (e) {
+    alert('Could not update favourite: ' + e.message);
+  }
+}
+
+// Same toggle, but re-opens the hook lightbox afterwards so the heart state
+// updates in place instead of leaving the user staring at stale data.
+async function toggleFavouriteInLb(table, id) {
+  await toggleFavourite(table, id);
+  if (table === 'hooks' && _hookMap[id]) _openHookLb(id);
+}
+
+async function init() {
+  try {
+    const res  = await fetch('/api/data');
+    const data = await res.json();
+    _data = data;
+
+    if (!data.hooks.length && !data.ingested.length) {
+      document.getElementById('sec-library').innerHTML = '<div class="empty">No data yet. Run <code>python ingest.py &lt;url&gt;</code> to analyse your first piece of content.</div>';
+      return;
+    }
+
+    renderMetrics(data);
+    renderCharts(data);
+    renderLibrary(data);
+    renderThisWeek(data);
+  } catch (err) {
+    document.getElementById('sec-library').innerHTML = `<div class="empty">Could not load data. Is server.py running? (${err.message})</div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
