@@ -7,7 +7,7 @@
 ![Built for Claude Code](https://img.shields.io/badge/built%20for-Claude%20Code-8A63D2.svg)
 ![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
-![HookLab dashboard](docs/dashboard.gif)
+![HookLab dashboard](docs/dashboard.png)
 
 A suite of [Claude Code](https://claude.ai/code) skills for analysing short-form video hooks. Point it at a TikTok, Instagram Reel, or YouTube Short (or an image or a piece of copy) and Claude scores the hook against a binary checklist, classifies the target demographic and niche, extracts the retention tactics, and saves reusable creative assets into a searchable library with a dashboard.
 
