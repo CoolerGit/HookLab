@@ -305,11 +305,6 @@
 
     .table-count { font-size: 12px; color: var(--dim); font-weight: 500; margin-bottom: 10px; }
 
-    .plat-badge {
-      display: inline-block; padding: 2px 9px; border-radius: 9999px;
-      font-size: 11px; font-weight: 700; color: #fff;
-    }
-
     /* "Details" / "Expand" pill on hover (used by .bow-card) */
     .c-expand {
       position: absolute; top: 10px; right: 10px;
@@ -1292,7 +1287,6 @@ function filterLibrary() {
 
   const grid = document.getElementById('pin-grid');
   if (grid) {
-    count = 0;
     Array.from(grid.children).forEach(card => { if (applyFilter(card)) count++; });
   }
 
