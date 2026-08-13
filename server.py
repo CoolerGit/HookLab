@@ -35,9 +35,10 @@ def query(sql, params=()):
 def thumb_url(path):
     if not path:
         return None
-    if not os.path.exists(path):
+    fname = os.path.basename(path)
+    if not os.path.exists(os.path.join(THUMB_DIR, fname)):
         return None
-    return "/thumbnails/" + os.path.basename(path)
+    return "/thumbnails/" + fname
 
 
 BEST_OF_WEEK_CATEGORIES = [

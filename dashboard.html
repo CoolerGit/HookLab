@@ -241,15 +241,12 @@
     .view-btn:hover  { border-color: rgba(255,255,255,0.35); color: #fff; }
     .view-btn.active { background: rgba(79,110,247,0.18); border-color: rgba(79,110,247,0.40); color: #fff; }
 
-    .lib-view { display: none; }
-    .lib-view.active { display: block; }
-
     .pin-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 16px; margin-bottom: 40px;
     }
     .pin-card {
-      position: relative; cursor: pointer;
+      position: relative; cursor: pointer; min-width: 0;
       background: var(--card-bg); border: 1px solid var(--card-border);
       border-radius: 14px; overflow: hidden;
       box-shadow: 0 2px 10px rgba(0,0,0,0.30);
@@ -307,35 +304,6 @@
     }
 
     .table-count { font-size: 12px; color: var(--dim); font-weight: 500; margin-bottom: 10px; }
-    .table-wrap {
-      background: var(--card-bg); border: 1px solid var(--card-border);
-      border-radius: 18px; overflow: hidden; margin-bottom: 40px;
-      overflow-x: auto;
-    }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 800px; }
-    .data-table thead tr { background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); }
-    .data-table th {
-      padding: 12px 14px; text-align: left;
-      font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
-      text-transform: uppercase; color: var(--dim); white-space: nowrap;
-    }
-    .data-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.10s ease; }
-    .data-table tbody tr:last-child { border-bottom: none; }
-    .data-table tbody tr:hover { background: rgba(255,255,255,0.03); }
-    .data-table td {
-      padding: 10px 14px; color: rgba(255,255,255,0.70);
-      max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .row-delete {
-      background: rgba(229,72,77,0.12); border: 1px solid rgba(229,72,77,0.35);
-      color: #e5484d; font-size: 11px; font-weight: 700; font-family: 'Figtree', sans-serif;
-      padding: 5px 12px; border-radius: 8px; cursor: pointer;
-      transition: background 0.14s ease, color 0.14s ease;
-    }
-    .row-delete:hover { background: #e5484d; color: #fff; }
-    .data-table .col-id   { color: var(--dim); font-weight: 600; font-size: 12px; }
-    .data-table .col-url  { color: var(--dim); font-size: 11px; font-family: monospace; }
-    .data-table .col-num  { color: rgba(255,255,255,0.55); }
 
     .plat-badge {
       display: inline-block; padding: 2px 9px; border-radius: 9999px;
@@ -1067,7 +1035,15 @@ function renderCharts(d) {
       }},
       scales: {
         x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.28)' }, beginAtZero: true },
-        y: { grid: { color: 'rgba(255,255,255,0)' }, ticks: { color: 'rgba(255,255,255,0.30)' } },
+        y: {
+          grid: { color: 'rgba(255,255,255,0)' }, ticks: {
+            color: 'rgba(255,255,255,0.30)',
+            callback(value) {
+              const label = this.getLabelForValue(value);
+              return label.length > 18 ? label.slice(0, 18) + '…' : label;
+            },
+          },
+        },
       },
     },
   });
@@ -1211,28 +1187,7 @@ function renderLibrary(d) {
 
   const makeOpts = arr => arr.map(v => `<option>${esc(v)}</option>`).join('');
 
-  const tableRows = rows.map(r => {
-    const pc = platColour(r.platform);
-    const platHtml = r.platform !== '—'
-      ? `<span class="plat-badge" style="background:${pc}22;border:1px solid ${pc}44;">${esc(r.platform)}</span>`
-      : '—';
-    return `
-    <tr data-platform="${esc(r.platform)}" data-demo="${esc(r.demographic)}" data-niche="${esc(r.niche)}" data-fav="${r.is_favourite ? '1' : '0'}" data-search="${r.search_blob}">
-      <td class="col-id">${r.id}</td>
-      <td>${platHtml}</td>
-      <td>${esc(r.hook_type || '—')}</td>
-      <td>${esc(r.demographic)}</td>
-      <td>${esc(r.niche)}</td>
-      <td class="col-num">${fmtNum(r.views)}</td>
-      <td class="col-num">${fmtNum(r.likes)}</td>
-      <td class="col-num">${fmtNum(r.comments)}</td>
-      <td>${esc(r.date)}</td>
-      <td class="col-url" title="${esc(r.source)}">${esc(trunc(r.source, 55))}</td>
-      <td><button class="row-delete" title="Delete permanently" onclick="deleteContent('${r.table}', ${r.id});">Delete</button></td>
-    </tr>`;
-  }).join('');
-
-  // Lightbox looks hooks up by id regardless of which view (grid/table) triggered it
+  // Lightbox looks hooks up by id regardless of which card triggered it
   d.hooks.forEach(h => { _hookMap[h.id] = h; });
 
   const gridHtml = buildPinGrid(rows);
@@ -1264,27 +1219,10 @@ function renderLibrary(d) {
       </div>
       <div class="view-toggle">
         <button class="view-btn fav-filter-btn" id="btn-fav-only" onclick="toggleFavOnly()">${heartIcon(false)} Favourites</button>
-        <button class="view-btn active" id="btn-view-grid" onclick="setLibraryView('grid')">Grid</button>
-        <button class="view-btn" id="btn-view-table" onclick="setLibraryView('table')">Table</button>
       </div>
     </div>
     <div class="table-count" id="table-count">Showing ${rows.length} entries</div>
-    <div class="lib-view active" id="lib-view-grid">${gridHtml}</div>
-    <div class="lib-view" id="lib-view-table">
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>ID</th><th>Platform</th><th>Hook Type</th>
-              <th>Demographic</th><th>Niche</th>
-              <th>Views</th><th>Likes</th><th>Comments</th>
-              <th>Date</th><th>Source</th><th></th>
-            </tr>
-          </thead>
-          <tbody id="table-body">${tableRows}</tbody>
-        </table>
-      </div>
-    </div>
+    ${gridHtml}
   `;
 }
 
@@ -1325,13 +1263,6 @@ function buildPinGrid(rows, emptyMsg) {
   return `<div class="pin-grid" id="pin-grid">${cards}</div>`;
 }
 
-function setLibraryView(view) {
-  document.getElementById('btn-view-grid').classList.toggle('active', view === 'grid');
-  document.getElementById('btn-view-table').classList.toggle('active', view === 'table');
-  document.getElementById('lib-view-grid').classList.toggle('active', view === 'grid');
-  document.getElementById('lib-view-table').classList.toggle('active', view === 'table');
-}
-
 let _favOnly = false;
 
 function toggleFavOnly() {
@@ -1358,9 +1289,6 @@ function filterLibrary() {
     el.style.display = show ? '' : 'none';
     return show;
   };
-
-  const tbody = document.getElementById('table-body');
-  if (tbody) Array.from(tbody.rows).forEach(row => { if (applyFilter(row)) count++; });
 
   const grid = document.getElementById('pin-grid');
   if (grid) {
