@@ -6,7 +6,6 @@
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Built for Claude Code](https://img.shields.io/badge/built%20for-Claude%20Code-8A63D2.svg)
-![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
 ![HookLab dashboard](docs/dashboard.png)
 
