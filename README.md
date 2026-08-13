@@ -1,5 +1,14 @@
 # HookLab
 
+**See what makes a short-form hook work, right inside Claude Code.**
+
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
+![Built for Claude Code](https://img.shields.io/badge/built%20for-Claude%20Code-8A63D2.svg)
+![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
+
+![HookLab dashboard](docs/dashboard.png)
+
 A suite of [Claude Code](https://claude.ai/code) skills for analysing short-form video hooks. Point it at a TikTok, Instagram Reel, or YouTube Short (or an image or a piece of copy) and Claude scores the hook against a binary checklist, classifies the target demographic and niche, extracts the retention tactics, and saves reusable creative assets into a searchable library with a dashboard.
 
 HookLab runs **inside Claude Code**. The analysis is done by Claude directly, chat-natively, so there is no separate AI API to sign up for or pay for. The small Python scripts in this repo are helpers the skills call to fetch content and store results; they are not meant to be run as a standalone product.
@@ -13,6 +22,12 @@ HookLab runs **inside Claude Code**. The analysis is done by Claude directly, ch
 | `/hooklab-dashboard` | Open the visual analytics dashboard in the browser. |
 | `/hooklab-seo` | Generate an SEO title, description/caption, and tags for a video. |
 | `/hooklab-edit` | Turn a raw clip into a finished 9:16 short. |
+
+## Why HookLab
+
+- **The hard part is the analysis, and Claude does it.** No model API to wire up or pay for: hook typing, checklist scoring, demographic and niche classification, and asset extraction all happen inside Claude Code.
+- **It builds a library you can reuse.** Every ingest adds scored hooks and reusable creative assets, so `/hooklab-scriptgen` can engineer new scripts from what has actually worked for you.
+- **It is honest about what works.** Binary checklists instead of vibes, with a 50% pass-rate bar before a hook counts as a reference worth building from.
 
 ## How it works
 
