@@ -68,7 +68,14 @@ checklist: {
   two_layers_aligned, pattern_interrupt, no_intro_before_value   — all booleans
 }
 ```
-Checklist meaning: shows outcome/result before explaining how; visible on-screen text in first 2s; audio starts mid-thought or cuts off for suspense; shows a human face/emotional reaction; two or more layers (visual/text/audio) aligned toward the same mechanism; pattern interrupt in the first second; avoids context/intro before the value.
+Mark each `true` only when its observable condition is met, otherwise `false`. Judge the hook (roughly the first 3 seconds), not the whole video:
+- `outcome_before_how`: the first frame or spoken line shows or states the finished result / peak payoff before any explanation.
+- `text_in_first_2s`: legible on-screen text is present within the first 2 seconds.
+- `audio_suspense`: the audio opens mid-sentence or mid-action to create suspense, not a clean intro.
+- `human_face_or_reaction`: a human face with eyes visible (no sunglasses) appears within roughly the first second, or a clear emotional reaction is shown.
+- `two_layers_aligned`: at least two of {spoken hook, visual action, on-screen headline} state the same specific subject (all three aligned is ideal); misaligned layers fail.
+- `pattern_interrupt`: the first second contains visual movement (camera pan, fast cut, or a subject entering/moving) or an otherwise unexpected visual.
+- `no_intro_before_value`: does not open with a greeting ("hey guys", "welcome back") or preamble; the value or subject lands immediately.
 
 **Analysing image** (`content_type` is `image_url` or `image_file`):
 ```
@@ -85,6 +92,12 @@ checklist: {
   recognisable_aesthetic, creates_question   — all booleans
 }
 ```
+Mark each `true` only when its condition is met:
+- `clear_focal_point`: one element the eye lands on first, not a cluttered or competing composition.
+- `text_readable_at_glance`: any text is legible without zooming (large enough, high contrast).
+- `contrast_directs`: colour or contrast deliberately steers the eye to the focal point (e.g. a bright, high-key subject against a muted background).
+- `recognisable_aesthetic`: the layout reads as a specific, identifiable style or platform format, not generic.
+- `creates_question`: raises a question or desire the frame does not fully resolve.
 
 **Analysing text** (`content_type` is `text` or `text_file`):
 ```
@@ -103,6 +116,12 @@ checklist: {
   under_10_words, concrete_language   — all booleans
 }
 ```
+Mark each `true` only when its condition is met:
+- `claim_without_qualifying`: the first sentence states a claim outright, with no hedging ("might", "I think", "sort of", "kind of").
+- `specific_person`: names or clearly addresses a specific audience or situation (e.g. "if you're a solo founder under 10k MRR"), not "everyone".
+- `information_gap`: opens a loop the reader has to keep reading to close.
+- `under_10_words`: the opening statement is under 10 words.
+- `concrete_language`: uses concrete specifics, ideally a non-rounded number ("$4,213", "19 days"), rather than abstract phrasing.
 
 ### Step 3: extract reusable assets
 

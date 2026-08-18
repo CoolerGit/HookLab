@@ -33,6 +33,8 @@ This prints one JSON object to stdout: `{ suggestions, hooks, retention_tactics,
 
 Do not call any external API. Reason over the JSON: pick the strongest hook for this niche/demographic from `hooks`, the retention tactics from `retention_tactics` most likely to sustain attention for this topic, and the asset patterns from `assets` that amplify the chosen mechanism. Cite exactly where each element came from (e.g. "Hook #3 — authority claim, 6/7 pass rate, Instagram").
 
+The library is your primary source. When it is thin (few or no qualifying hooks, or none in this niche), supplement with the general principles in `hook-principles.md` (in this skill folder): a three-phase (hook / retention / CTA) cross-niche reference. Treat those as strong defaults, not laws, and always prefer the library where they conflict, it is real evidence from this account. If you lean on a principle from that doc, cite it as such (e.g. "principles doc: single-action CTA") so sourcing stays honest.
+
 Writing style rules — apply to every word of copy:
 - No em dashes. Colon, comma, or restructure instead.
 - Hook line (first spoken sentence / text overlay): short and punchy, one clean sentence.
