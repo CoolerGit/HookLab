@@ -18,7 +18,7 @@ If it's ambiguous, default to guide mode rather than guessing at a source to ing
 
 ## Ingest mode
 
-**Chat-native.** `ingest.py` only fetches (Apify) and saves (SQLite). **You (Claude) do the analysis yourself** — the hook typing, checklist scoring, demographic/niche classification, retention tactics, replication templates, and asset extraction. No external model API is involved: everything downstream of getting the transcript and thumbnail is you.
+**Chat-native.** `ingest.py` only fetches (Apify) and saves (SQLite). **You (the agent) do the analysis yourself** — the hook typing, checklist scoring, demographic/niche classification, retention tactics, replication templates, and asset extraction. No external model API is involved: everything downstream of getting the transcript and thumbnail is you.
 
 **Working directory for all commands:** the repository root (run everything from the folder containing this repo).
 **Shell:** PowerShell examples below; `APIFY_TOKEN` must be set in the shell you run from (it's the only env var HookLab needs).
@@ -43,7 +43,7 @@ If a personal note was given, pass it through: `python ingest.py --fetch-only "<
 
 ### Step 2: analyse it yourself
 
-Read any local image (`thumbnail_path` or `local_image_path`) with the Read tool before judging it — don't score a video or image on transcript/text alone if a thumbnail exists.
+Read any local image (`thumbnail_path` or `local_image_path`) by opening the image file before judging it — don't score a video or image on transcript/text alone if a thumbnail exists.
 
 Produce a JSON object named `result` with **exactly** these fields (field names matter, they map straight to database columns):
 
@@ -150,7 +150,7 @@ Build one JSON object combining everything and pipe it into `--save-result`:
   "assets": [ ...your step 3 array... ]
 }
 ```
-Use the Write tool to write this to a temp file (e.g. `_ingest_payload.json` in the working directory), then:
+Write this to a temp file (e.g. `_ingest_payload.json` in the working directory), then:
 ```powershell
 Get-Content _ingest_payload.json -Raw | python ingest.py --save-result
 ```
@@ -173,7 +173,7 @@ This is a reference mode, not an execution mode — answer from the summary belo
 
 ### What HookLab is
 
-A suite of Claude Code skills for analysing short-form video hooks. Accepts any URL (TikTok, Instagram, YouTube), image, or text, fetched via Apify actors. Analysis, checklist scoring, demographic/niche classification, retention tactics, and asset extraction are done chat-natively by Claude, with no external model API. A Flask + HTML dashboard shows checklist analytics, a filterable content library, and an asset bank.
+A suite of agent skills (Claude Code and Codex) for analysing short-form video hooks. Accepts any URL (TikTok, Instagram, YouTube), image, or text, fetched via Apify actors. Analysis, checklist scoring, demographic/niche classification, retention tactics, and asset extraction are done chat-natively by the agent, with no external model API. A Flask + HTML dashboard shows checklist analytics, a filterable content library, and an asset bank.
 
 **Reference:** see `CLAUDE.md` and `README.md` in the repo root for entry points, the file map, and environment variables before doing any non-trivial HookLab work.
 

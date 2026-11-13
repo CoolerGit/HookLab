@@ -5,7 +5,7 @@ description: Compose one engineered short-form video script from the user's Hook
 
 # /hooklab-scriptgen — chat-native composer
 
-This is the HookLab script composer, run entirely in chat. It asks the brief questions directly in chat, pulls the reference library via the read-only `db_export.py` export, and **you (Claude) compose the script yourself** — this skill never calls an external model API. Thumbnails are shown inline in chat using `![[...]]`-style embeds where a local path is available, or described if only a remote thumbnail exists.
+This is the HookLab script composer, run entirely in chat. It asks the brief questions directly in chat, pulls the reference library via the read-only `db_export.py` export, and **you (the agent) compose the script yourself** — this skill never calls an external model API. Thumbnails are shown inline in chat using `![[...]]`-style embeds where a local path is available, or described if only a remote thumbnail exists.
 
 **Working directory for all commands:** the repository root (run everything from the folder containing this repo).
 
@@ -27,7 +27,7 @@ To suggest defaults for niche/demographic, use the `suggestions` field in `db_ex
 ```powershell
 python db_export.py
 ```
-This prints one JSON object to stdout: `{ suggestions, hooks, retention_tactics, assets }`. No interactive prompts, read-only, safe to run anytime. `hooks` only includes hooks passing ≥50% of their checklist (`MIN_PASS_RATE`), already sorted by pass rate, capped at 10. Each hook includes `thumbnail_path` (a local path under `thumbnails/`, or null) — read that image with the Read tool and embed it inline when you cite that hook as your source, so the user can see what they're building from.
+This prints one JSON object to stdout: `{ suggestions, hooks, retention_tactics, assets }`. No interactive prompts, read-only, safe to run anytime. `hooks` only includes hooks passing ≥50% of their checklist (`MIN_PASS_RATE`), already sorted by pass rate, capped at 10. Each hook includes `thumbnail_path` (a local path under `thumbnails/`, or null) — open that image file and embed it inline when you cite that hook as your source, so the user can see what they're building from.
 
 ### 3. Compose the script yourself
 
@@ -73,7 +73,7 @@ Write the full object (topic, niche, target_demographic, platform, video_length,
 ```powershell
 python -c "import json,os; os.makedirs('renders', exist_ok=True); json.dump(<the object>, open('renders/script_latest.json','w',encoding='utf-8'), ensure_ascii=False, indent=2)"
 ```
-In practice, use the Write tool to write `renders\script_latest.json` directly with the JSON you composed — simpler than round-tripping through `python -c`. Make sure the top-level object has `topic`, `niche`, `target_demographic`, `platform`, `video_length` alongside `sourcing`/`hook`/`retention_beats`/`cta`/`why_this_build`.
+In practice, write `renders/script_latest.json` directly with the JSON you composed — simpler than round-tripping through `python -c`. Make sure the top-level object has `topic`, `niche`, `target_demographic`, `platform`, `video_length` alongside `sourcing`/`hook`/`retention_beats`/`cta`/`why_this_build`.
 
 Then save it into the `generated_scripts` table so it shows up alongside terminal-composed scripts:
 ```powershell

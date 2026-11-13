@@ -29,4 +29,4 @@ description: Open the HookLab visual dashboard (Flask + dashboard.html) in the b
 
 ## Do not
 
-- Don't run `python server.py` in the foreground via the PowerShell tool without a background flag — it never returns, so the tool call will hang until timeout.
+- Don't run `python server.py` in the foreground without backgrounding it — it never returns, so the command will hang until timeout.

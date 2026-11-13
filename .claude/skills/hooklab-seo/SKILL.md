@@ -5,7 +5,7 @@ description: Generate SEO-optimised title, description/caption, and tags for a s
 
 # /hooklab-seo — SEO title, description, and tags generator
 
-Chat-native, like `/hooklab-scriptgen` — no terminal script to run end to end, no external API call. **You (Claude) compose the output yourself**, reasoning over three inputs: the user's own ingested library (what's proven to work), live web research (what's working on the platform right now), and a voice sample the user pastes in for this run.
+Chat-native, like `/hooklab-scriptgen` — no terminal script to run end to end, no external API call. **You (the agent) compose the output yourself**, reasoning over three inputs: the user's own ingested library (what's proven to work), live web research (what's working on the platform right now), and a voice sample the user pastes in for this run.
 
 **Working directory for all commands:** the repository root (run everything from the folder containing this repo).
 
@@ -54,7 +54,7 @@ If `hooks.db` doesn't exist or returns no rows, say so and skip straight to web 
 
 ### 3. Live web research for platform SEO + posting time
 
-Use the WebSearch tool (do this fresh each run, don't rely on training-data knowledge — platform algorithms and SEO conventions change often). Research, for the specific platform chosen:
+Search the web (do this fresh each run, don't rely on training-data knowledge — platform algorithms and SEO conventions change often). Research, for the specific platform chosen:
 - Current title/caption/hashtag best practices and length conventions.
 - What YouTube's "Tags" field is actually worth doing now vs. relying on title/description keywords (YouTube has deprecated tags' influence over time — check current guidance rather than assuming).
 - Optimal posting time/day for that platform, framed as general guidance (note explicitly that their own account's analytics, if they have access to them, will beat generic advice).
